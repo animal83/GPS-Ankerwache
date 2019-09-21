@@ -16,12 +16,10 @@ String UPDATE_10_sec= "$PMTK220,5000*1B\r\n";
 String ONLY = "$PMTK314,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*2A\r\n";
 
 
-#define pinALARM 8
-#define pinENTER 7
-#define pinUP 6
-#define pinDOWN 5
-
-
+#define pinALARM 9
+#define pinENTER 8
+#define pinUP 7
+#define pinDOWN 6
 
 uint8_t flag=0;  // Für ender des NMEA Stings
 char c; // Einzelzeichen lesen des NMEA Sting übertragung 
@@ -44,7 +42,7 @@ float longitude2 = 0; // Lengengrad Messpunkt
 
 void readGPS(){
   
-  if(GPSSerial.available()>0){
+  if(GPSSerial.available()>0 and flag != 1){
     c=GPSSerial.read();
     NMEAtmp.concat(c);
   }
@@ -127,7 +125,7 @@ String ConvertLng() {
   return lngfirst;
 }
 
-float distance_between (float lat1, float long1, float lat2, float long2){ // berechnet die Distanz zwischen 2 GPS punkten 
+float distance_between_123 (float lat1, float long1, float lat2, float long2){ // berechnet die Distanz zwischen 2 GPS punkten 
   // returns distance in meters between two positions, both specified
   // as signed decimal-degrees latitude and longitude. Uses great-circle
   // distance computation for hypothetical sphere of radius 6372795 meters.
@@ -148,7 +146,18 @@ float distance_between (float lat1, float long1, float lat2, float long2){ // be
   delta = sqrt(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
   delta = atan2(delta, denom);
-  return delta * 6372795;
+  float dis = delta * 6372795;
+  if (dis > 999.00){
+    return 0;
+  }
+  return dis;
+}
+
+float distance_between (float lat1, float long1, float lat2, float long2){ // berechnet die Distanz zwischen 2 GPS punkten 
+   float dy = 111.3 * (lat1 -lat2);
+   float lat = (lat1 + lat2) / 2 * 0.01745;
+   float dx = 111.3 * cos(lat) * (long1 - long2);
+   return sqrt(dx * dx + dy * dy) * 1000;
 }
 
 uint16_t setDistanz(uint16_t distanz) { // Distanz zum Anker Manuel eingeben werte 0 bis 999 in Metern
@@ -228,6 +237,7 @@ void showPOS1isSet() { // Zeigt an das Die POS1 gesetzt ist duchr ein * am anfan
 }
 
 void alarmTest() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
+  Timer1.stop();
   u8x8.clearDisplay();
   u8x8.drawString(2, 3, "Alarm Test");
 
@@ -238,15 +248,32 @@ void alarmTest() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
   }
 
   u8x8.clearDisplay();
+  Timer1.restart();
+}
+
+void AnkerAlarm() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
+  Timer1.stop();
+  u8x8.clearDisplay();
+  u8x8.drawString(2, 3, "Alarm!");
+
+  for (uint16_t i = 10; i < 2500; i =  i + 25) {
+    tone(pinALARM, i);
+    delay(100);
+    noTone(pinALARM);
+  }
+  for (uint16_t i = 2500; i > 10; i =  i - 25) {
+    tone(pinALARM, i);
+    delay(100);
+    noTone(pinALARM);
+  }
+
+  u8x8.clearDisplay();
+  Timer1.restart();
 }
 
 void info() { // InfoSeite 
-  
   u8x8.clearDisplay();
-  
-  u8x8.drawString(0, 0, "SAT: ??");
-  u8x8.drawString(8, 0, "+/-: ??m");
-  
+    
   // Angabe Breiten und Längengrad der aktuellen position
   u8x8.drawString(0, 1, "B:");
   u8x8.setCursor(5, 1);
@@ -267,7 +294,6 @@ void info() { // InfoSeite
   // Aktuelle Entfernung zum Ankerpunkt
   u8x8.drawString(0, 5, "ENTFER.:");
   if(latitude1 != 0 and longitude1 != 0){
-    distanzNow =  distance_between(latitude1, longitude1, latitude2, longitude2);
     u8x8.setCursor(9, 5);
     u8x8.print(distanzNow);
   }else{
@@ -285,14 +311,8 @@ void info() { // InfoSeite
   u8x8.setCursor(9, 7);
   u8x8.print(toleranz);
 
-  // Warten biss Enterbutten gedrückt wird oder info nach 5sce neu aufrufen 
-  long count = 0;
-  while (ButtoneENTER() != 1 and count < 2000) {
-    count++;
-    delay(1);
-    }
-    if (count >= 1999){
-      info();
+  while (ButtoneENTER() != 1) {
+    delay(5);
     }
     
   u8x8.clearDisplay();
@@ -391,8 +411,6 @@ void mainmenu() {
 }
 
 void setup() {
-  Serial.begin(115200);
-  delay(100);
   pinMode(pinUP, INPUT);
   pinMode(pinDOWN, INPUT);
   pinMode(pinENTER, INPUT);
@@ -414,6 +432,7 @@ void setup() {
 void loop() {
 
   if (norelooper == 0) {
+    Timer1.stop();
     mainmenu();
     showToleranz();
     showDistanz();
@@ -493,18 +512,25 @@ void loop() {
     Timer1.stop();
     NMEAtmp.trim();
     SplitNMEAStr(NMEAtmp);
-    nmea[3] = ConvertLat();
-    nmea[5] = ConvertLng();
-    latitude2 = nmea[3].toFloat();
-    longitude2 = nmea[3].toFloat();
-      Serial.print(nmea[2]);
-      Serial.print("  ");
-      Serial.print(nmea[3]);
-      Serial.print("  ");
-      Serial.println(nmea[5]);
+    if (nmea[2] == "A"){
+      nmea[3] = ConvertLat();
+      nmea[5] = ConvertLng();
+      latitude2 = nmea[3].toFloat();
+      longitude2 = nmea[5].toFloat();
+      if(latitude1 != 0 && longitude1 != 0){
+        distanzNow =  distance_between(latitude1, longitude1, latitude2, longitude2);
+      }
+    }
     NMEAtmp="";
     flag=0;
     Timer1.restart();
   }
+  
+  if(distanz != 0 && latitude1 != 0 && longitude1 != 0){
+    if( distanzNow > distanz  + toleranz){
+        AnkerAlarm();   
+    }
+   }
 
 }
+
