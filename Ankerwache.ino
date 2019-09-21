@@ -28,8 +28,8 @@ String nmea[15]; // Unterteilter NEMA String in einzel Strings
 
 
 uint8_t toleranz = 5;  // Tollerranz weter o bis 50
-uint16_t distanz = 0; // Distanzwert zum Ankerpunkt
-float distanzNow = 0; // Aktuellberchneter Abstand zum Nanker
+uint16_t distance = 0; // Distanzwert zum Ankerpunkt
+float distanceNow = 0; // Aktuellberchneter Abstand zum Nanker
 int8_t menupunkt = 0; // Anzeige Menu Punkt  
 bool norelooper = 0; // Display wir nur Autualiesiert wenn Enderungen eingetreten sind
 bool buttonlock = 0; // keine 2 Taten aufeinaml
@@ -160,38 +160,38 @@ float distance_between (float lat1, float long1, float lat2, float long2){ // be
    return sqrt(dx * dx + dy * dy) * 1000;
 }
 
-uint16_t setDistanz(uint16_t distanz) { // Distanz zum Anker Manuel eingeben werte 0 bis 999 in Metern
+uint16_t setDistanz(uint16_t distance) { // Distanz zum Anker Manuel eingeben werte 0 bis 999 in Metern
   u8x8.clearDisplay();
   u8x8.drawString(0, 0, "Distanz in M:");
   u8x8.setCursor(2, 1);
-  u8x8.print(distanz);
+  u8x8.print(distance);
   u8x8.drawString(0, 2, "Neue Distanz: ");
-  uint16_t oldDistanz = distanz;
+  uint16_t oldDistanz = distance;
   while (ButtoneENTER() != 1) {
-    if (oldDistanz != distanz) {
+    if (oldDistanz != distance) {
       u8x8.clearLine(3);
       u8x8.setCursor(2, 3);
-      u8x8.print(distanz);
-      oldDistanz = distanz;
+      u8x8.print(distance);
+      oldDistanz = distance;
     }
     delay(5);
     if ( ButtoneUP() == 1) {
-      distanz++;
+      distance++;
     }
     if ( ButtoneDOWN() == 1) {
-      distanz--;
+      distance--;
     }
-    if (distanz > 999) {
-      distanz = 0;
+    if (distance > 999) {
+      distance = 0;
     }
   }
   u8x8.clearDisplay();
-  return distanz;
+  return distance;
 }
 
-void showDistanz() { // Ausgabe der Distanz auf dem Displaz hinder dem Menu punkt Distanz
+void showDistance() { // Ausgabe der Distanz auf dem Displaz hinder dem Menu punkt Distanz
   u8x8.setCursor(13, 2);
-  u8x8.print(distanz);
+  u8x8.print(distance);
 }
 
 uint8_t setToleranz(uint8_t toleranz) { // Toleranz in der Distanz Werte 0 bis 50 in Metern
@@ -295,7 +295,7 @@ void info() { // InfoSeite
   u8x8.drawString(0, 5, "ENTFER.:");
   if(latitude1 != 0 and longitude1 != 0){
     u8x8.setCursor(9, 5);
-    u8x8.print(distanzNow);
+    u8x8.print(distanceNow);
   }else{
     u8x8.setCursor(9, 5);
     u8x8.print(0);
@@ -304,7 +304,7 @@ void info() { // InfoSeite
   // Eingestellte Distanz
   u8x8.drawString(0, 6, "DISTANZ:");
   u8x8.setCursor(9, 6);
-  u8x8.print(distanz);
+  u8x8.print(distance);
   
   // Aktuell eingestellte Tollerranz
   u8x8.drawString(0, 7, "TOLERA.:");
@@ -435,7 +435,7 @@ void loop() {
     Timer1.stop();
     mainmenu();
     showToleranz();
-    showDistanz();
+    showDistance();
     showPOS1isSet();
     norelooper = 1;
     buttonlock = 0;
@@ -464,7 +464,7 @@ void loop() {
   
   if (ButtoneENTER() == 1 and menupunkt == 1 and buttonlock == 0) { // DISTANZ MIT POS2
     if (latitude1 != 0 and longitude1 != 0){
-        distanz =  round(distance_between(latitude1, longitude1, latitude2, longitude2));
+        distance =  round(distance_between(latitude1, longitude1, latitude2, longitude2));
     }else{
       showPOS1miss();
     }
@@ -473,7 +473,7 @@ void loop() {
   }
   
   if (ButtoneENTER() == 1 and menupunkt == 2 and buttonlock == 0) { //Distanz
-      distanz = setDistanz(distanz);
+      distance = setDistanz(distance);
       buttonlock = 1;
       norelooper = 0;
   }
@@ -518,7 +518,7 @@ void loop() {
       latitude2 = nmea[3].toFloat();
       longitude2 = nmea[5].toFloat();
       if(latitude1 != 0 && longitude1 != 0){
-        distanzNow =  distance_between(latitude1, longitude1, latitude2, longitude2);
+        distanceNow =  distance_between(latitude1, longitude1, latitude2, longitude2);
       }
     }
     NMEAtmp="";
@@ -526,8 +526,8 @@ void loop() {
     Timer1.restart();
   }
   
-  if(distanz != 0 && latitude1 != 0 && longitude1 != 0){
-    if( distanzNow > distanz  + toleranz){
+  if(distance != 0 && latitude1 != 0 && longitude1 != 0){
+    if( distanceNow > distance  + toleranz){
         AnkerAlarm();   
     }
    }
