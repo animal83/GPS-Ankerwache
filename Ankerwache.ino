@@ -21,32 +21,32 @@ String ONLY = "$PMTK314,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*2A\r\n";
 #define pinUP 7
 #define pinDOWN 6
 
-uint8_t flag=0;  // Für ender des NMEA Stings
-char c; // Einzelzeichen lesen des NMEA Sting übertragung 
-String NMEAtmp=""; //Zeit weise übertragung 
-String nmea[15]; // Unterteilter NEMA String in einzel Strings
+uint8_t flag = 0;        // Für ender des NMEA Stings
+char c;                  // Einzelzeichen lesen des NMEA Sting übertragung
+String NMEAtmp = "";     // Zeit weise übertragung
+String nmea[15];         // Unterteilter NEMA String in einzel Strings
 
 
-uint8_t toleranz = 5;  // Tollerranz weter o bis 50
-uint16_t distance = 0; // Distanzwert zum Ankerpunkt
-float distanceNow = 0; // Aktuellberchneter Abstand zum Nanker
-int8_t menupunkt = 0; // Anzeige Menu Punkt  
-bool norelooper = 0; // Display wir nur Autualiesiert wenn Enderungen eingetreten sind
-bool buttonlock = 0; // keine 2 Taten aufeinaml
+uint8_t toleranz = 5;    // Tollerranz weter o bis 50
+uint16_t distance = 0;   // Distanzwert zum Ankerpunkt
+float distanceNow = 0;   // Aktuellberchneter Abstand zum Nanker
+int8_t menupunkt = 0;    // Anzeige Menu Punkt
+bool norelooper = 0;     // Display wir nur Autualiesiert wenn Enderungen eingetreten sind
+bool buttonlock = 0;     // keine 2 Taten aufeinaml
 
-float latitude1 = 0; // Breitengrad Ankerpunkt
-float longitude1 = 0; // Lengengrad Ankerpunkt
-float latitude2 = 0; // Breitengrad Messpunkt
-float longitude2 = 0; // Lengengrad Messpunkt
+float latitude1 = 0;     // Breitengrad Ankerpunkt
+float longitude1 = 0;    // Lengengrad Ankerpunkt
+float latitude2 = 0;     // Breitengrad Messpunkt
+float longitude2 = 0;    // Lengengrad Messpunkt
 
 
 void readGPS(){
-  
+
   if(GPSSerial.available()>0 and flag != 1){
     c=GPSSerial.read();
     NMEAtmp.concat(c);
   }
- 
+
   if(c=='\r'){
     flag=1;
   }
@@ -125,11 +125,11 @@ String ConvertLng() {
   return lngfirst;
 }
 
-float distance_between_123 (float lat1, float long1, float lat2, float long2){ // berechnet die Distanz zwischen 2 GPS punkten 
-  // returns distance in meters between two positions, both specified
-  // as signed decimal-degrees latitude and longitude. Uses great-circle
-  // distance computation for hypothetical sphere of radius 6372795 meters.
-  // Because Earth is no exact sphere, rounding errors may be up to 0.5%.
+float distance_between_123 (float lat1, float long1, float lat2, float long2){ // gibt den Abstand in Metern zwischen zwei 2 GPS-Punkten zurück.
+  // Mit vorzeichenbehaftete dezimale Längen- und Breitengrade.
+  // Verwendet Großkreis
+  // Entfernungsberechnung für eine hypothetische Kugel mit einem Radius von 6372795 Metern.
+  // Da die Erde keine exakte Kugel ist, können Rundungsfehler bis zu 0,5% auftreten.
   // Courtesy of Maarten Lamers
   float delta = radians(long1 - long2);
   float sdlong = sin(delta);
@@ -153,7 +153,7 @@ float distance_between_123 (float lat1, float long1, float lat2, float long2){ /
   return dis;
 }
 
-float distance_between (float lat1, float long1, float lat2, float long2){ // berechnet die Distanz zwischen 2 GPS punkten 
+float distance_between (float lat1, float long1, float lat2, float long2){ //  Alternativ Formel um die Distanz zwischen 2 GPS Punkten zu berechnen
    float dy = 111.3 * (lat1 -lat2);
    float lat = (lat1 + lat2) / 2 * 0.01745;
    float dx = 111.3 * cos(lat) * (long1 - long2);
@@ -228,7 +228,7 @@ void showToleranz() { // Ausgabe der Toleranz auf dem Displaz hinder dem Menu pu
   u8x8.print(toleranz);
 }
 
-void showPOS1isSet() { // Zeigt an das Die POS1 gesetzt ist duchr ein * am anfang der ersten Zeile 
+void showPOS1isSet() { // Zeigt an das die POS1 gesetzt ist durch ein * am anfang der ersten Zeile
   if (latitude1 != 0 and longitude1 != 0) {
     u8x8.drawString(0, 0, "*");
   } else {
@@ -236,7 +236,7 @@ void showPOS1isSet() { // Zeigt an das Die POS1 gesetzt ist duchr ein * am anfan
   }
 }
 
-void alarmTest() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
+void alarmTest() { // Spielt einen Alarm Test ab und zeigt im OLDE "TestAlarm"
   Timer1.stop();
   u8x8.clearDisplay();
   u8x8.drawString(2, 3, "Alarm Test");
@@ -251,7 +251,7 @@ void alarmTest() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
   Timer1.restart();
 }
 
-void AnkerAlarm() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
+void AnkerAlarm() { // Spielt einen Alarm ab und zeigt im OLDE " Alarm!" an
   Timer1.stop();
   u8x8.clearDisplay();
   u8x8.drawString(2, 3, "Alarm!");
@@ -271,14 +271,14 @@ void AnkerAlarm() { // Spielt einen Alarm Test ab und zeit im OLDE "TestAlarm"
   Timer1.restart();
 }
 
-void info() { // InfoSeite 
+void info() { // InfoSeite
   u8x8.clearDisplay();
-    
+
   // Angabe Breiten und Längengrad der aktuellen position
   u8x8.drawString(0, 1, "B:");
   u8x8.setCursor(5, 1);
   u8x8.print(nmea[3]);
-  
+
   u8x8.drawString(0, 2, "L:");
   u8x8.setCursor(4, 2);
   u8x8.print(nmea[5]);
@@ -300,12 +300,12 @@ void info() { // InfoSeite
     u8x8.setCursor(9, 5);
     u8x8.print(0);
   }
-  
+
   // Eingestellte Distanz
   u8x8.drawString(0, 6, "DISTANZ:");
   u8x8.setCursor(9, 6);
   u8x8.print(distance);
-  
+
   // Aktuell eingestellte Tollerranz
   u8x8.drawString(0, 7, "TOLERA.:");
   u8x8.setCursor(9, 7);
@@ -314,13 +314,13 @@ void info() { // InfoSeite
   while (ButtoneENTER() != 1) {
     delay(5);
     }
-    
+
   u8x8.clearDisplay();
 }
 
 void showPOS1miss(){
   u8x8.clearDisplay();
-  u8x8.drawString(0, 3, "POS1 ist nicht  "); 
+  u8x8.drawString(0, 3, "POS1 ist nicht  ");
   u8x8.drawString(0, 4, "   gesetzt!");
   delay(3000);
   u8x8.clearDisplay();
@@ -441,13 +441,13 @@ void loop() {
     buttonlock = 0;
   }
 
-  if (ButtoneUP() == 1 and buttonlock == 0) { // Menu Punkt RunterZehelen 
+  if (ButtoneUP() == 1 and buttonlock == 0) { // Menu Punkt RunterZehelen
     buttonlock = 1;
     norelooper = 0;
     menupunkt--;
   }
 
-  if (ButtoneDOWN() == 1 and buttonlock == 0) { // Menu Punkt Raufzählen 
+  if (ButtoneDOWN() == 1 and buttonlock == 0) { // Menu Punkt Raufzählen
     buttonlock = 1;
     norelooper = 0;
     menupunkt++;
@@ -461,7 +461,7 @@ void loop() {
       norelooper = 0;
     }
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 1 and buttonlock == 0) { // DISTANZ MIT POS2
     if (latitude1 != 0 and longitude1 != 0){
         distance =  round(distance_between(latitude1, longitude1, latitude2, longitude2));
@@ -471,44 +471,44 @@ void loop() {
     buttonlock = 1;
     norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 2 and buttonlock == 0) { //Distanz
       distance = setDistanz(distance);
       buttonlock = 1;
       norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 3) { // Toleranz
       toleranz = setToleranz(toleranz);
       buttonlock = 1;
       norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 4 and buttonlock == 0) { // POS DEL
       latitude1 = 0;
       longitude1 = 0;
       buttonlock = 1;
       norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 5 and buttonlock == 0) { //Alarmtest
     alarmTest();
     buttonlock = 1;
     norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 6 and buttonlock == 0) { //INFO
     info();
     buttonlock = 1;
     norelooper = 0;
   }
-  
+
   if (ButtoneENTER() == 1 and menupunkt == 7 and buttonlock == 0) { //xxxxx
     buttonlock = 1;
     norelooper = 0;
   }
 
-  if(flag==1){  // Abfrage der NMEA daten untübertragung in String 
+  if(flag==1){  // Abfrage der NMEA daten untübertragung in String
     Timer1.stop();
     NMEAtmp.trim();
     SplitNMEAStr(NMEAtmp);
@@ -525,12 +525,11 @@ void loop() {
     flag=0;
     Timer1.restart();
   }
-  
+
   if(distance != 0 && latitude1 != 0 && longitude1 != 0){
     if( distanceNow > distance  + toleranz){
-        AnkerAlarm();   
+        AnkerAlarm();
     }
    }
 
 }
-
